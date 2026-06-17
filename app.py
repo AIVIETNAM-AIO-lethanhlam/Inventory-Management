@@ -461,8 +461,11 @@ if page == "Dashboard":
 
     st.subheader("Category Demand Trend Over Time")
 
+    # Chỉ lấy dữ liệu trong 2 năm chính: 2022 và 2023
+    demand_df = df[df["Year"].isin([2022, 2023])].copy()
+
     monthly_category_demand = (
-        df.groupby(["Year", "Month", "Category"])["Demand Forecast"]
+        demand_df.groupby(["Year", "Month", "Category"])["Demand Forecast"]
         .sum()
         .reset_index()
         .sort_values(["Year", "Month"])
@@ -474,7 +477,7 @@ if page == "Dashboard":
         + monthly_category_demand["Month"].astype(str).str.zfill(2)
     )
 
-    categories = sorted(df["Category"].unique().tolist())
+    categories = sorted(demand_df["Category"].unique().tolist())
 
     st.markdown("### Demand Forecast Trend by Each Category")
 
@@ -503,7 +506,7 @@ if page == "Dashboard":
 
     st.caption(
         "Each line chart shows how demand forecast changes over time for one category. "
-        "This makes it easier to identify trends and seasonality compared with putting all categories in one chart."
+        "Only data from 2022 and 2023 is included."
     )
 
 # =========================
