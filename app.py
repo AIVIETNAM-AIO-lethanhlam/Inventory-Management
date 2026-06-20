@@ -147,11 +147,29 @@ st.markdown(
 
 def draw_bar_chart(data, x_col, y_col, title):
     fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar(data[x_col], data[y_col])
+
+    ax.bar(
+        data[x_col],
+        data[y_col],
+        width=0.8
+    )
+
+    # Tính giới hạn trục Y
+    min_revenue = data[y_col].min()
+    max_revenue = data[y_col].max()
+
+    padding = (max_revenue - min_revenue) * 0.2
+
+    ax.set_ylim(
+        min_revenue - padding,
+        max_revenue + padding
+    )
+
     ax.set_title(title)
     ax.set_xlabel("Month")
     ax.set_ylabel("Revenue ($)")
     ax.tick_params(axis="x", rotation=0)
+
     st.pyplot(fig)
 
 
@@ -302,117 +320,321 @@ if page == "Dashboard":
 
     st.divider()
 
+    # # =========================
+    # # STORE REVENUE BY REGION PIE CHARTS
+    # # =========================
+
+    # st.subheader("Store Revenue Share by Region")
+
+    # store_region_revenue = (
+    #     df.groupby(["Year", "Region", "Store ID"])["Estimated Revenue"]
+    #     .sum()
+    #     .reset_index()
+    # )
+
+    # regions = sorted(df["Region"].dropna().unique().tolist())
+
+    # st.markdown("### Store Revenue Share by Region - 2022")
+
+    # region_cols_2022 = st.columns(4)
+
+    # for idx, region in enumerate(regions):
+    #     with region_cols_2022[idx % 4]:
+    #         data_region_2022 = store_region_revenue[
+    #             (store_region_revenue["Year"] == 2022) &
+    #             (store_region_revenue["Region"] == region)
+    #         ]
+
+    #         draw_pie_chart(
+    #             data_region_2022,
+    #             "Store ID",
+    #             "Estimated Revenue",
+    #             f"{region} - 2022"
+    #         )
+
+    # st.markdown("### Store Revenue Share by Region - 2023")
+
+    # region_cols_2023 = st.columns(4)
+
+    # for idx, region in enumerate(regions):
+    #     with region_cols_2023[idx % 4]:
+    #         data_region_2023 = store_region_revenue[
+    #             (store_region_revenue["Year"] == 2023) &
+    #             (store_region_revenue["Region"] == region)
+    #         ]
+
+    #         draw_pie_chart(
+    #             data_region_2023,
+    #             "Store ID",
+    #             "Estimated Revenue",
+    #             f"{region} - 2023"
+    #         )
+
+    #     st.divider()
+    
+    # # =========================
+    # # STORE REVENUE TREND BY REGION - LINE CHARTS
+    # # =========================
+
+    # st.subheader("Store Revenue Trend by Region")
+
+    # line_df = df[df["Year"].isin([2022, 2023])].copy()
+
+    # monthly_store_region_revenue = (
+    #     line_df.groupby(["Year", "Month", "Month Name", "Region", "Store ID"])["Estimated Revenue"]
+    #     .sum()
+    #     .reset_index()
+    #     .sort_values(["Year", "Month", "Region", "Store ID"])
+    # )
+
+    # for year in [2022, 2023]:
+    #     st.markdown(f"### Monthly Store Revenue Trend by Region - {year}")
+
+    #     year_data = monthly_store_region_revenue[
+    #         monthly_store_region_revenue["Year"] == year
+    #     ]
+
+    #     fig, axes = plt.subplots(1, 4, figsize=(22, 5), sharey=False)
+
+    #     legend_handles = []
+    #     legend_labels = []
+
+    #     for idx, region in enumerate(regions):
+    #         ax = axes[idx]
+
+    #         region_data = year_data[year_data["Region"] == region]
+
+    #         for store_id in sorted(region_data["Store ID"].unique()):
+    #             store_data = region_data[region_data["Store ID"] == store_id]
+
+    #             line, = ax.plot(
+    #                 store_data["Month Name"],
+    #                 store_data["Estimated Revenue"],
+    #                 marker="o",
+    #                 label=store_id
+    #             )
+
+    #             if store_id not in legend_labels:
+    #                 legend_handles.append(line)
+    #                 legend_labels.append(store_id)
+
+    #         ax.set_title(f"{region} - {year}")
+    #         ax.set_xlabel("Month")
+    #         ax.set_ylabel("Revenue ($)")
+    #         ax.tick_params(axis="x", rotation=45)
+
+    #     fig.legend(
+    #         legend_handles,
+    #         legend_labels,
+    #         title="Store ID",
+    #         loc="lower center",
+    #         ncol=len(legend_labels),
+    #         bbox_to_anchor=(0.5, -0.08)
+    #     )
+
+    #     fig.tight_layout(rect=[0, 0.12, 1, 1])
+
+    #     st.pyplot(fig)
+        
+    # st.divider()
+    
     # =========================
-    # STORE REVENUE BY REGION PIE CHARTS
+    # REGION REVENUE TREND
     # =========================
 
-    st.subheader("Store Revenue Share by Region")
+    st.subheader("Region Revenue Trend Overview")
 
-    store_region_revenue = (
-        df.groupby(["Year", "Region", "Store ID"])["Estimated Revenue"]
+    region_trend_df = df[df["Year"].isin([2022, 2023])].copy()
+
+    monthly_region_revenue = (
+        region_trend_df
+        .groupby(["Year", "Month", "Month Name", "Region"])["Estimated Revenue"]
         .sum()
         .reset_index()
+        .sort_values(["Year", "Month", "Region"])
     )
 
-    regions = sorted(df["Region"].dropna().unique().tolist())
+    for year in [2022, 2023]:
+        st.markdown(f"### Monthly Revenue Trend by Region - {year}")
 
-    st.markdown("### Store Revenue Share by Region - 2022")
+        year_region_data = monthly_region_revenue[
+            monthly_region_revenue["Year"] == year
+        ]
 
-    region_cols_2022 = st.columns(4)
+        fig, ax = plt.subplots(figsize=(12, 5))
 
-    for idx, region in enumerate(regions):
-        with region_cols_2022[idx % 4]:
-            data_region_2022 = store_region_revenue[
-                (store_region_revenue["Year"] == 2022) &
-                (store_region_revenue["Region"] == region)
+        for region in sorted(year_region_data["Region"].unique()):
+            region_data = year_region_data[
+                year_region_data["Region"] == region
             ]
 
-            draw_pie_chart(
-                data_region_2022,
-                "Store ID",
-                "Estimated Revenue",
-                f"{region} - 2022"
+            ax.plot(
+                region_data["Month Name"],
+                region_data["Estimated Revenue"],
+                marker="o",
+                linewidth=2.5,
+                label=region
             )
 
-    st.markdown("### Store Revenue Share by Region - 2023")
+        ax.set_title(f"Revenue Trend by Region - {year}")
+        ax.set_xlabel("Month")
+        ax.set_ylabel("Revenue ($)")
 
-    region_cols_2023 = st.columns(4)
+        ticks = ax.get_yticks()
+        ax.set_yticklabels([f"{t/1e6:.1f}M" for t in ticks])
 
-    for idx, region in enumerate(regions):
-        with region_cols_2023[idx % 4]:
-            data_region_2023 = store_region_revenue[
-                (store_region_revenue["Year"] == 2023) &
-                (store_region_revenue["Region"] == region)
-            ]
+        ax.legend(
+            title="Region",
+            loc="lower center",
+            bbox_to_anchor=(0.5, -0.3),
+            ncol=4
+        )
 
-            draw_pie_chart(
-                data_region_2023,
-                "Store ID",
-                "Estimated Revenue",
-                f"{region} - 2023"
-            )
+        fig.tight_layout()
 
-        st.divider()
+        st.pyplot(fig)
 
     # =========================
-    # OVERSTOCKED PRODUCTS BY PRODUCT + CATEGORY
+    # OVERSTOCKED PRODUCTS ANALYSIS BY YEAR
     # =========================
 
     st.subheader("Overstocked Products Analysis")
 
-    product_inventory = (
-        df.groupby(["Product ID", "Category"])
+    overstock_df = df[df["Year"].isin([2022, 2023])].copy()
+
+    product_inventory_yearly = (
+        overstock_df
+        .groupby(["Year", "Category", "Product ID"])
         .agg(
             avg_inventory=("Inventory Level", "mean"),
-            avg_demand_forecast=("Demand Forecast", "mean"),
-            total_units_sold=("Units Sold", "sum")
+            avg_demand_forecast=("Demand Forecast", "mean")
         )
         .reset_index()
     )
 
-    product_inventory["overstock_gap"] = (
-        product_inventory["avg_inventory"] -
-        product_inventory["avg_demand_forecast"]
+    product_inventory_yearly["overstock_gap"] = (
+        product_inventory_yearly["avg_inventory"]
+        - product_inventory_yearly["avg_demand_forecast"]
     )
 
-    overstock_products = (
-        product_inventory[product_inventory["overstock_gap"] > 0]
-        .sort_values("overstock_gap", ascending=False)
-        .head(10)
+    product_inventory_yearly["overstock_rate"] = (
+        product_inventory_yearly["overstock_gap"]
+        / product_inventory_yearly["avg_demand_forecast"]
+        * 100
     )
 
-    overstock_products["product_category"] = (
-        overstock_products["Product ID"] + " - " + overstock_products["Category"]
+    product_inventory_yearly = product_inventory_yearly[
+        product_inventory_yearly["overstock_rate"] > 0
+    ]
+
+    product_inventory_yearly["product_category"] = (
+        product_inventory_yearly["Product ID"]
+        + " - "
+        + product_inventory_yearly["Category"]
     )
 
-    st.markdown("### Top 10 Overstocked Products by Product and Category")
+    categories = sorted(product_inventory_yearly["Category"].unique())
 
-    fig, ax = plt.subplots(figsize=(12, 5))
-    ax.bar(
-        overstock_products["product_category"],
-        overstock_products["overstock_gap"]
-    )
-    ax.set_xlabel("Product ID - Category")
-    ax.set_ylabel("Overstock Gap")
-    ax.set_title("Top 10 Products with Highest Overstock Gap")
-    ax.tick_params(axis="x", rotation=45)
-    st.pyplot(fig)
+    for year in [2022, 2023]:
+        st.markdown(f"### Overstock Rate by Product and Category - {year}")
 
-    st.caption(
-        "Overstock Gap = Average Inventory Level - Average Demand Forecast. "
-        "This chart shows which specific products and categories have too much inventory."
-    )
+        year_overstock = product_inventory_yearly[
+            product_inventory_yearly["Year"] == year
+        ]
 
-    st.divider()
+        # ===== 5 CATEGORY BAR CHARTS =====
+        for i in range(0, len(categories), 2):
+            cols = st.columns(2)
 
-    # =========================
-    # INVENTORY TURNOVER BY PRODUCT + CATEGORY
+            for j, category in enumerate(categories[i:i + 2]):
+                with cols[j]:
+                    category_data = (
+                        year_overstock[
+                            year_overstock["Category"] == category
+                        ]
+                        .sort_values("Product ID")
+                    )
+
+                    fig, ax = plt.subplots(figsize=(8, 4))
+
+                    ax.bar(
+                        category_data["Product ID"],
+                        category_data["overstock_rate"]
+                    )
+
+                    min_val = category_data["overstock_rate"].min()
+                    max_val = category_data["overstock_rate"].max()
+                    padding = (max_val - min_val) * 0.25
+
+                    if padding == 0:
+                        padding = max_val * 0.1
+
+                    ax.set_ylim(
+                        max(0, min_val - padding),
+                        max_val + padding
+                    )
+
+                    ax.set_title(f"{category} - {year}")
+                    ax.set_xlabel("Product ID")
+                    ax.set_ylabel("Overstock Rate (%)")
+                    ax.tick_params(axis="x", rotation=45)
+
+                    st.pyplot(fig)
+
+        # ===== TOP 10 OVERSTOCKED PRODUCTS IN SAME YEAR =====
+        st.markdown(f"### Top 10 Products with Highest Overstock Rate - {year}")
+
+        top10_overstock = (
+            year_overstock
+            .sort_values("overstock_rate", ascending=False)
+            .head(10)
+        )
+
+        fig, ax = plt.subplots(figsize=(12, 5))
+
+        ax.bar(
+            top10_overstock["product_category"],
+            top10_overstock["overstock_rate"]
+        )
+
+        min_val = top10_overstock["overstock_rate"].min()
+        max_val = top10_overstock["overstock_rate"].max()
+        padding = (max_val - min_val) * 0.25
+
+        if padding == 0:
+            padding = max_val * 0.1
+
+        ax.set_ylim(
+            max(0, min_val - padding),
+            max_val + padding
+        )
+
+        ax.set_title(f"Top 10 Products with Highest Overstock Rate - {year}")
+        ax.set_xlabel("Product ID - Category")
+        ax.set_ylabel("Overstock Rate (%)")
+        ax.tick_params(axis="x", rotation=45)
+
+        st.pyplot(fig)
+
+        st.caption(
+            "Overstock Rate (%) = "
+            "(Average Inventory Level - Average Demand Forecast) / "
+            "Average Demand Forecast × 100"
+        )
+
+        st.divider()
+
+        # =========================
+    # INVENTORY TURNOVER BY PRODUCT + CATEGORY BY YEAR
     # =========================
 
     st.subheader("Inventory Turnover by Product")
 
-    product_turnover = (
-        df.groupby(["Product ID", "Category"])
+    turnover_df = df[df["Year"].isin([2022, 2023])].copy()
+
+    product_turnover_yearly = (
+        turnover_df
+        .groupby(["Year", "Category", "Product ID"])
         .agg(
             total_units_sold=("Units Sold", "sum"),
             avg_inventory=("Inventory Level", "mean")
@@ -420,40 +642,110 @@ if page == "Dashboard":
         .reset_index()
     )
 
-    product_turnover["inventory_turnover"] = (
-        product_turnover["total_units_sold"] /
-        product_turnover["avg_inventory"]
+    product_turnover_yearly["inventory_turnover"] = (
+        product_turnover_yearly["total_units_sold"]
+        / product_turnover_yearly["avg_inventory"]
     )
 
-    top_product_turnover = (
-        product_turnover
-        .sort_values("inventory_turnover", ascending=False)
-        .head(10)
+    product_turnover_yearly = product_turnover_yearly[
+        product_turnover_yearly["avg_inventory"] > 0
+    ]
+
+    product_turnover_yearly["product_category"] = (
+        product_turnover_yearly["Product ID"]
+        + " - "
+        + product_turnover_yearly["Category"]
     )
 
-    top_product_turnover["product_category"] = (
-        top_product_turnover["Product ID"] + " - " + top_product_turnover["Category"]
-    )
+    categories_turnover = sorted(product_turnover_yearly["Category"].unique())
 
-    st.markdown("### Top 10 Products with Highest Inventory Turnover")
+    for year in [2022, 2023]:
+        st.markdown(f"### Inventory Turnover by Product and Category - {year}")
 
-    fig, ax = plt.subplots(figsize=(12, 5))
-    ax.bar(
-        top_product_turnover["product_category"],
-        top_product_turnover["inventory_turnover"]
-    )
-    ax.set_xlabel("Product ID - Category")
-    ax.set_ylabel("Inventory Turnover")
-    ax.set_title("Top 10 Products with Highest Inventory Turnover")
-    ax.tick_params(axis="x", rotation=45)
-    st.pyplot(fig)
+        year_turnover = product_turnover_yearly[
+            product_turnover_yearly["Year"] == year
+        ]
 
-    st.caption(
-        "Inventory Turnover = Total Units Sold / Average Inventory Level. "
-        "A higher value means the product sells faster relative to its inventory."
-    )
+        # ===== 5 CATEGORY BAR CHARTS =====
+        for i in range(0, len(categories_turnover), 2):
+            cols = st.columns(2)
 
-    st.divider()
+            for j, category in enumerate(categories_turnover[i:i + 2]):
+                with cols[j]:
+                    category_data = (
+                        year_turnover[
+                            year_turnover["Category"] == category
+                        ]
+                        .sort_values("Product ID")
+                    )
+
+                    fig, ax = plt.subplots(figsize=(8, 4))
+
+                    ax.bar(
+                        category_data["Product ID"],
+                        category_data["inventory_turnover"]
+                    )
+
+                    min_val = category_data["inventory_turnover"].min()
+                    max_val = category_data["inventory_turnover"].max()
+                    padding = (max_val - min_val) * 0.25
+
+                    if padding == 0:
+                        padding = max_val * 0.1
+
+                    ax.set_ylim(
+                        max(0, min_val - padding),
+                        max_val + padding
+                    )
+
+                    ax.set_title(f"{category} - {year}")
+                    ax.set_xlabel("Product ID")
+                    ax.set_ylabel("Inventory Turnover")
+                    ax.tick_params(axis="x", rotation=45)
+
+                    st.pyplot(fig)
+
+        # ===== TOP 10 INVENTORY TURNOVER IN SAME YEAR =====
+        st.markdown(f"### Top 10 Products with Highest Inventory Turnover - {year}")
+
+        top10_turnover = (
+            year_turnover
+            .sort_values("inventory_turnover", ascending=False)
+            .head(10)
+        )
+
+        fig, ax = plt.subplots(figsize=(12, 5))
+
+        ax.bar(
+            top10_turnover["product_category"],
+            top10_turnover["inventory_turnover"]
+        )
+
+        min_val = top10_turnover["inventory_turnover"].min()
+        max_val = top10_turnover["inventory_turnover"].max()
+        padding = (max_val - min_val) * 0.25
+
+        if padding == 0:
+            padding = max_val * 0.1
+
+        ax.set_ylim(
+            max(0, min_val - padding),
+            max_val + padding
+        )
+
+        ax.set_title(f"Top 10 Products with Highest Inventory Turnover - {year}")
+        ax.set_xlabel("Product ID - Category")
+        ax.set_ylabel("Inventory Turnover")
+        ax.tick_params(axis="x", rotation=45)
+
+        st.pyplot(fig)
+
+        st.caption(
+            "Inventory Turnover = Total Units Sold / Average Inventory Level. "
+            "A higher value means the product sells faster relative to its average inventory."
+        )
+
+        st.divider()
 
     # =========================
     # SEPARATE DEMAND TREND LINE CHARTS BY CATEGORY
